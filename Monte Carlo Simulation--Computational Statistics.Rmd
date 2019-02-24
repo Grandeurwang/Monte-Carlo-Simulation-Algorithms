@@ -1,0 +1,250 @@
+---
+title: "HW 2"
+author: "Guanren Wang"
+date: "2019-2-11"
+output: word_document
+---
+
+#1.
+First, explore if sample size have an impact on bias
+```{r fig.align='center',fig.pos=''}
+#we keep Level of heterogeneity gamma=1, slope beta1=1, intercept beta0=2
+
+n<-c(10,25,50,100)
+R<-100
+beta<-matrix(0,R,8)
+colnames(beta)<-c('beta0_10','beta1_10','beta0_25','beta1_25','beta0_50','beta1_50','beta0_100','beta1_100')
+
+set.seed(125)
+for (l in 1:R) {
+x10<-rnorm(n[1])
+x25<-rnorm(n[2])
+x50<-rnorm(n[3])
+x100<-rnorm(n[4])
+
+e10<-sqrt(exp(x10))
+e25<-sqrt(exp(x25))
+e50<-sqrt(exp(x50))
+e100<-sqrt(exp(x100))
+
+
+resid10<-1:10
+for (i in 1:10) {
+  resid10[i]<-rnorm(n=1,mean=0,sd=e10[i])
+}
+resid25<-1:25
+for (i in 1:25) {
+  resid25[i]<-rnorm(n=1,mean=0,sd=e25[i])
+}
+resid50<-1:50
+for (i in 1:50) {
+  resid50[i]<-rnorm(n=1,mean=0,sd=e50[i])
+}
+resid100<-1:100
+for (i in 1:100) {
+  resid100[i]<-rnorm(n=1,mean=0,sd=e100[i])
+}
+
+y10<-2+x10+resid10
+y25<-2+x25+resid25
+y50<-2+x50+resid50
+y100<-2+x100+resid100
+
+reg10<-lm(y10~x10)
+reg25<-lm(y25~x25)
+reg50<-lm(y50~x50)
+reg100<-lm(y100~x100)
+reg<-c(reg10$coefficients,reg25$coefficients,reg50$coefficients,reg100$coefficients)
+beta[l,]<-reg
+}
+means<- apply(beta, 2, mean)
+bias <- means - c(rep(c(2,1),4))
+(sample<- rbind(means, bias))
+plot(x=c(1,2,3,4) ,abs(sample[2,seq(1,7,2)]),xaxt='n',main='beta0',ylab = 'bias',xlab='sample size')
+lines(x=c(1,2,3,4) ,abs(sample[2,seq(1,7,2)]))
+plot(x=c(1,2,3,4) ,abs(sample[2,seq(2,8,2)]),xaxt='n',main='beta1',ylab = 'bias',xlab='sample size')
+lines(x=c(1,2,3,4) ,abs(sample[2,seq(2,8,2)]))
+```
+
+We could find that the as sample size become larger, the bias decreases.
+
+Second, we explore the impact of slope
+```{r fig.align='center'}
+#we keep Level of heterogeneity gamma=1,sample size n=100, intercept beta0=2
+beta1<-c(0, 0.5, 1, 2)
+n=100
+R=100
+betabeta<-matrix(0,R,8)
+
+set.seed(124)
+for (l in 1:R) {
+
+x<-rnorm(n)
+e<-sqrt(exp(x))
+resid<-1:n
+
+for (i in 1:n) {
+  resid[i]<-rnorm(n=1,mean=0,sd=e[i])
+}
+y<-matrix(0,n,4)
+for (i in 1:4) {
+  y[,i]<-2+beta1[i]*x+resid
+}
+
+betalist<-list(1,2,3,4)
+for (i in 1:4) {
+  betalist[[i]]<-lm(y[,i]~x)
+}
+
+betabeta[l,]<-c(betalist[[1]]$coefficients,betalist[[2]]$coefficients,betalist[[3]]$coefficients,betalist[[4]]$coefficients)
+}
+means<- apply(betabeta, 2, mean)
+bias <- means - c(2,0,2,0.5,2,1,2,2)
+(slope<- rbind(means, bias))
+
+plot(x=c(1,2,3,4) ,abs(slope[2,seq(1,7,2)]),xaxt='n',main='beta0',ylab = 'bias',xlab='slope')
+lines(x=c(1,2,3,4) ,abs(slope[2,seq(1,7,2)]))
+plot(x=c(1,2,3,4) ,abs(slope[2,seq(2,8,2)]),xaxt='n',main='beta1',ylab = 'bias',xlab='slope')
+lines(x=c(1,2,3,4) ,abs(slope[2,seq(2,8,2)]))
+```
+
+From the plots we could find that the slope has nothing to do with bias.
+
+Finally, we explore if Level of heterogeneity affect bias.
+```{r fig.align='center'}
+#we keep slope beta1=1,sample size n=100, intercept beta0=2
+gamma1<-c(0, 0.5, 1, 2)
+n=100
+R=100
+gammagamma<-matrix(0,R,8)
+
+set.seed(125)
+for (l in 1:R) {
+x<-rnorm(n)
+
+e<-matrix(0,n,4)
+for (i in 1:4) {
+  e[,i]<-exp(gamma1[i]*x)
+}
+
+y<-matrix(0,n,4)
+for (i in 1:4) {
+  for (j in 1:n) {
+    y[j,i] <-2+x[j]+rnorm(n=1,mean=0,sd=sqrt(e[j,i]))
+     }
+}
+
+gammalist<-list(1,2,3,4)
+for (i in 1:4) {
+  gammalist[[i]]<-lm(y[,i]~x)
+}
+
+gammagamma[l,]<-c(gammalist[[1]]$coefficients,gammalist[[2]]$coefficients,gammalist[[3]]$coefficients,gammalist[[4]]$coefficients)
+}
+
+means<- apply(gammagamma, 2, mean)
+bias <- means - rep(c(2,1),4)
+(gamma<- rbind(means, bias))
+
+plot(x=c(1,2,3,4) ,abs(gamma[2,seq(1,7,2)]),xaxt='n',main='beta0',ylab = 'bias',xlab=expression(gamma))
+lines(x=c(1,2,3,4) ,abs(gamma[2,seq(1,7,2)]))
+plot(x=c(1,2,3,4) ,abs(gamma[2,seq(2,8,2)]),xaxt='n',main='beta1',ylab = 'bias',xlab=expression(gamma))
+lines(x=c(1,2,3,4) ,abs(gamma[2,seq(2,8,2)]))
+```
+
+From the plot we could find that the bias becomes larger with the increase of gamma.
+
+#2.
+(a).
+```{r fig.align='center'}
+n=20
+set.seed(123)
+x1<-runif(n)
+x2<-runif(n,0,2)
+
+beta0=1
+beta1=2
+beta2=3
+
+R=1000
+y<-c()
+for (i in 1:R) {
+  e<-rnorm(n)
+  y<-c(y,beta0+beta1*x1+beta2*x2+e)
+}
+hist(y)
+```
+
+(b).
+```{r fig.align='center'}
+yy<-matrix(y,n,R)
+
+cf<-matrix(0,R,3)
+sigma2<-1:R
+for (i in 1:R) {
+  reg<-lm(yy[,i]~x1+x2)
+  cf[i,]<-coef(reg)
+  sigma2[i]<-(summary(reg)$sigma)^2
+}
+cf<-cbind(cf,sigma2)
+colnames(cf)<-c('beta0','beta1','beta2','sigma2')
+cf<-data.frame(cf)
+
+library(ggplot2)
+p1<-ggplot(cf)+geom_histogram(aes(beta0),binwidth = 0.1)+theme_bw()+labs(title = 'beta0')
+p2<-ggplot(cf)+geom_histogram(aes(beta1),binwidth = 0.1)+theme_bw()+labs(title = 'beta1')
+p3<-ggplot(cf)+geom_histogram(aes(beta2),binwidth = 0.1)+theme_bw()+labs(title = 'beta2')
+p4<-ggplot(cf)+geom_histogram(aes(sigma2),binwidth = 0.05)+theme_bw()+labs(title = 'sigma2')
+library(gridExtra)
+grid.arrange(p1, p2, p3, p4, ncol=2)
+```
+
+(c).
+```{r fig.align='center'}
+(mean<-apply(cf,2,mean))
+
+(std<-apply(cf,2,sd))
+
+```
+
+Obviously, they are close to the theoretical values.
+
+#3.
+```{r fig.align='center'}
+library(MASS)
+
+loc.mix <- function(n, p, mu1, mu2, Sigma) {
+#generate sample from BVN location mixture
+n1 <- rbinom(1, size = n, prob = p)
+n2 <- n - n1
+x1 <- mvrnorm(n1, mu = mu1, Sigma)
+x2 <- mvrnorm(n2, mu = mu2, Sigma)
+X <- rbind(x1, x2) #combine the samples
+return(X[sample(1:n), ]) #mix them
+}
+
+set.seed(123)
+p1<-seq(1/16-1/32,1,1/16)
+n=1000
+
+y<-matrix(0,nrow = n,ncol = 16)
+for (i in 1:length(p1)) {
+    y[,i]<-loc.mix(n,p1[i],mu1=0,mu2=3,Sigma = 1)
+}
+
+colnames(y)<-as.character(p1)
+y<-data.frame(y)
+library(tidyr)
+library(dplyr)
+y<-y%>%
+  gather(p1,y)%>%
+  mutate(p1=as.factor(substr(p1,2,100)))
+
+set.seed(123)
+hist(loc.mix(n,0.75,mu1=0,mu2=3,Sigma = 1),main = 'histogram when p1=0.75',nclass = 40)
+library(ggplot2)
+ggplot(y)+geom_histogram(aes(y),binwidth = 0.25)+facet_wrap(~p1,nrow=4)+theme_bw()+labs(title = 'histograms of different p1')
+```
+
+From the plot we could find that, the bimodal shape is most apparent when p1 is approximate to 0.5.
+Conjecture: the closer to 0.5 p1 is, the more apparently bimodal the histogram shows.

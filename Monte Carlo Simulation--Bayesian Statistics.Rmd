@@ -1,0 +1,164 @@
+---
+title: "HW2"
+author: "Guanren Wang"
+date: "2019-2-23"
+output: word_document
+---
+#1.(b).
+```{r setup, include=FALSE}
+theta1<-c()
+theta2<-c()
+n=10000
+set.seed(123)
+for (i in 1:n) {
+  theta1<-c(theta1,rbeta(1,63,39))
+  theta2<-c(theta2,rbeta(1,29,23))
+}
+p<-(sum(theta1>theta2)/n)
+p
+```
+
+#2.(a).
+```{r }
+set.seed(123)
+n=100000
+thetaA<-c(rgamma(n,237,20))
+thetaB<-c(rgamma(n,123,14))
+p<-(sum(thetaA>thetaB)/n)
+p
+```
+
+#(b).
+```{r warning=F}
+n0=1000
+n=20000
+mA<-matrix(0,ncol = n0,nrow = n)
+mB<-matrix(0,ncol = n0,nrow = n)
+
+set.seed(124)
+for (i in 1:n0) {
+  thetaA<-c(rgamma(n,237,20))
+  thetaB<-c(rgamma(n,111+12*i,13+i))
+  mA[,i]<-thetaA
+  mB[,i]<-thetaB
+}
+m<-mA>mB
+p<-apply(m, 2, sum)/n
+dt<-data.frame(p=p,n0=1:n0)
+library(ggplot2)
+ggplot(dt)+geom_point(aes(n0,p))+theme_bw()+geom_hline(yintercept = 0.5)
+```
+
+#(c).
+```{r}
+#repeat part (a)
+set.seed(123)
+n=100000
+thetaA<-rgamma(n,237,20)
+thetaB<-rgamma(n,123,14)
+yA<-rpois(n,thetaA)
+yB<-rpois(n,thetaB)
+p<-(sum(yA>yB)/n)
+p
+
+#repeat part (b)
+n0=1000
+n=30000
+mA<-matrix(0,ncol = n0,nrow = n)
+mB<-matrix(0,ncol = n0,nrow = n)
+
+set.seed(124)
+for (i in 1:n0) {
+  thetaA<-c(rgamma(n,237,20))
+  thetaB<-c(rgamma(n,111+12*i,13+i))
+  yA<-rpois(n,thetaA)
+  yB<-rpois(n,thetaB)
+  mA[,i]<-yA
+  mB[,i]<-yB
+}
+m<-mA>mB
+p<-apply(m, 2, sum)/n
+dt<-data.frame(p=p,n0=1:n0)
+ggplot(dt)+geom_point(aes(n0,p))+theme_bw()+geom_hline(yintercept = 0.5)
+```
+#3.(a).
+```{r}
+s=1000
+nA=10
+set.seed(125)
+thetaA<-rgamma(s,237,20)
+yA<-matrix(0,ncol=s,nrow = nA)
+
+set.seed(125)
+for (i in 1:s) {
+  yA[,i]<-rpois(nA,thetaA[i])
+}
+mean<-apply(yA, 2, mean)
+std<-apply(yA, 2, sd)
+tsA<-mean/std
+hist(tsA,nclass = 40)
+
+y<-c(12,9, 12, 14, 13, 13, 15, 8, 15, 6)
+tA<-mean(y)/sd(y)
+tA
+
+```
+Obviously, the statistic from observed values is at the highest bar in the plot, which suggest fit of Poisson model for these data is good.
+
+#(b).
+```{r}
+s=1000
+nB=10
+set.seed(125)
+thetaB<-rgamma(s,123,14)
+yB<-matrix(0,ncol=s,nrow = nB)
+
+set.seed(125)
+for (i in 1:s) {
+  yB[,i]<-rpois(nB,thetaB[i])
+}
+mean<-apply(yB, 2, mean)
+std<-apply(yB, 2, sd)
+tsB<-mean/std
+hist(tsB,nclass = 40)
+
+y<-c(11,11,10,8,8,8,7,10,6,8,8,9,7)
+tB<-mean(y)/sd(y)
+tB
+```
+For population B, it seems that the fit of Poisson model for these data is not good because the statistic from observed value is very close to edge of distribution, which means a very small probability.
+
+#4.(a).
+```{r}
+int=1e-4
+theta<-seq(0,1,int)
+p<-(0.75*dbeta(theta,2,8)+0.25*dbeta(theta,8,2))*choose(43,15)*(theta^15)*(1-theta)^28
+plot(theta,p,type = 'l')
+
+area<-int*p
+cum_area<-area[1]
+i=1
+while ((cum_area/sum(area))<=0.025){
+  i=i+1
+  cum_area<-cum_area+area[i]
+}
+paste('2.5% quantile is',theta[i])
+
+i=1
+while ((cum_area/sum(area))<=0.975){
+  i=i+1
+  cum_area<-cum_area+area[i]
+}
+paste('97.5% quantile is',theta[i])
+```
+
+#(b).
+```{r}
+n=1000000
+#p=3/4*(choose(43,15)*beta(17,36)/beta(2,8))*dbeta(theta,17,36)+(choose(43,15)*beta(23,30)/beta(2,8))*dbeta(theta,23,30)/4
+set.seed(123)
+head<-rbinom(1,n,3/4*(choose(43,15)*beta(17,36)/beta(2,8)))
+q<-sort(c(rbeta(head,17,36),rbeta(n-head,23,30)))
+paste('2.5% percentile is',q[0.025*n])
+paste('97.5% percentile is',q[0.975*n])
+```
